@@ -28,9 +28,9 @@ class InvestmentController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->storeAs('imports', now()->format('d-m-Y_H-i') . '_' . $file->getClientOriginalName());
+        // $path = $file->storeAs('imports', now()->format('d-m-Y_H-i') . '_' . $file->getClientOriginalName());
 
-        Excel::import(new WalletUpdateImport, storage_path('app/' . $path));
+        Excel::import(new WalletUpdateImport, $file);
 
         return response()->json([
             'message' => 'Investment imported successfully',
