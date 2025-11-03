@@ -17,7 +17,7 @@ class ClientServices
 {
     public function get(int $user):User
     {
-        $response  = User::where('id', $user)->with(['account', 'userWallet', 'userBankAccounts'])->first();
+        $response  = User::where('id', $user)->with(['account', 'userWallet', 'userBankAccounts', 'UserIncomes'])->first();
         return $response;
     }
     public function getAll():Collection

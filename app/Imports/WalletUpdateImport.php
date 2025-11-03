@@ -31,6 +31,12 @@ class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReadi
             'name' => 'Reserva de emergência',
             'value' => 'reserva_de_emergencia',
             'data_info' => 'emergencia_no_ultimo_mes',
+        ],
+        ,
+        [
+            'name' => 'Investimento Personalizado 1 ano',
+            'value' => 'investimento_personalizado_1_ano',
+            'data_info' => 'personalizado_1_ano_no_ultimo_mes',
         ]
     ];
     public function chunkSize(): int

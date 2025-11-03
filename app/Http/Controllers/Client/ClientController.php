@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Client;
 
+use App\Enum\RoleEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Client\InviteClientRequest;
 use App\Models\User;
@@ -9,6 +10,7 @@ use App\Services\ClientServices;
 use App\Services\User\CreateUserClientServices;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class ClientController extends Controller
@@ -25,6 +27,15 @@ class ClientController extends Controller
     }
     public function index(int $id)
     {
+        $loggedUser = Auth::user();
+        if($loggedUser->role_id != RoleEnum::Master){
+            return response()->json(
+            [
+                'status' => '401',
+                'message' => 'Não autorizado',
+                'logged' => $loggedUser->role_id
+            ],401);
+        }
         $get = $this->clientServices->get($id);
         if(!$get){
             return response()->json([
@@ -35,7 +46,8 @@ class ClientController extends Controller
         return response()->json([
             'status'=> '200',
             'message'=> 'Usuário encontrado!',
-            'user' => $get
+            'user' => $get,
+            'logged' =>$loggedUser->role_id
         ], 200);
     }
     public function store()
