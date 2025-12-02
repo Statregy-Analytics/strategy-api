@@ -32,7 +32,6 @@ class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReadi
             'value' => 'reserva_de_emergencia',
             'data_info' => 'emergencia_no_ultimo_mes',
         ],
-        ,
         [
             'name' => 'Investimento Personalizado 1 ano',
             'value' => 'investimento_personalizado_1_ano',
