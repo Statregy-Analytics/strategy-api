@@ -31,7 +31,7 @@ class WalletExport implements FromCollection, WithHeadings, WithMapping
             'Patrimonial no último mês',
             'Reserva de emergência',
             'Emergência no último mês',
-            'Personalizado 1 ano',
+            'Investimento Personalizado 1 ano',
             'Personalizado 1 ano no último mês',
         ];
     }
