@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function(){
 
     Route::controller(InvestmentController::class)->prefix('/investment')->as('investment.')->group(function(){
         Route::get('/', 'store')->name('store');
+        Route::get('/export', 'exportInvestment')->name('export');
         Route::post('/import', 'importInvestment')->name('import');
     });
     Route::controller(PaymentController::class)->prefix('/payment')->as('payment.')->group(function() {

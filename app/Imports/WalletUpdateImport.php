@@ -2,16 +2,27 @@
 
 namespace App\Imports;
 
+use App\Http\Requests\Investment\StoreInvestmentRquest;
 use App\Models\Account;
 use App\Models\UserIncome;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
 
-class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReading
+class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReading, WithValidation, SkipsEmptyRows
 {
+    use SkipsFailures;
+
+    public function rules() :array
+    {
+        return (new StoreInvestmentRquest())->rules();
+    }
+
     protected $chunk = 1000;
     /**
      * @var array
