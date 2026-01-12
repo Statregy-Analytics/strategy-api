@@ -6,6 +6,8 @@ use App\Exports\WalletExport;
 use App\Imports\WalletUpdateImport;
 use App\Models\Investment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class InvestmentController extends Controller
@@ -46,13 +48,34 @@ class InvestmentController extends Controller
     public function exportInvestment()
     {
         $fileName = 'wallet-export-' . now()->format('d-m-Y_H-i') . '.xlsx';
+        try {
+            $stored = Excel::store(new WalletExport(), $fileName, 'public');
 
-        Excel::store(new WalletExport(), $fileName, 'public');
+            if (!$stored || !Storage::disk('public')->exists($fileName)) {
+                Log::error('Falha ao gerar exportação da carteira', [
+                    'file' => $fileName,
+                    'stored' => $stored,
+                ]);
 
-        return response()->json([
-            'download_url' => asset('storage/' . $fileName),
-            'file_name' => $fileName
-        ]);
+                return response()->json([
+                    'message' => 'Erro ao gerar o arquivo de exportação.',
+                ], 500);
+            }
+
+            return response()->json([
+                'download_url' => Storage::disk('public')->url($fileName),
+                'file_name' => $fileName,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Exceção ao gerar exportação da carteira', [
+                'file' => $fileName,
+                'exception' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Erro inesperado ao gerar o arquivo de exportação.',
+            ], 500);
+        }
     }
     // public function importInvestment2(Request $request)
     // {
