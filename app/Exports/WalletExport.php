@@ -6,8 +6,10 @@ use App\Models\Account;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class WalletExport implements FromCollection, WithHeadings, WithMapping
+class WalletExport implements FromCollection, WithHeadings, WithMapping, WithColumnFormatting
 {
     protected $investments = [
         'Investimento Personalizado',
@@ -57,37 +59,43 @@ class WalletExport implements FromCollection, WithHeadings, WithMapping
         return [
             $account->user->name ?? null,
             $account->person,
-            $this->formatNumber($currentLoan), // Dólar
-            $this->formatNumber($currentBalance), // disponível para investir
+            $currentLoan, // Dólar
+            $currentBalance, // disponível para investir
             // aqui vai repetir total de investimento certo seria $currentInvestment
-            $this->formatNumber($totalInvestido), // patrimônio investido (mesma origem do front)
-            $this->formatNumber($totalInvestido), // investimentos (total aplicado em contratos)
-            $this->formatNumber($carteira), // carteira (investido + disponível)
+            $totalInvestido, // patrimônio investido (mesma origem do front)
+            $totalInvestido, // investimentos (total aplicado em contratos)
+            $carteira, // carteira (investido + disponível)
 
             // Investimento Personalizado
-            $this->formatNumber(optional($incomes->get('Investimento Personalizado'))->value),
+            optional($incomes->get('Investimento Personalizado'))->value,
             optional($incomes->get('Investimento Personalizado'))->data_info,
 
             // Expansão Patrimonial
-            $this->formatNumber(optional($incomes->get('Expansão Patrimonial'))->value),
+            optional($incomes->get('Expansão Patrimonial'))->value,
             optional($incomes->get('Expansão Patrimonial'))->data_info,
 
             // Reserva de emergência
-            $this->formatNumber(optional($incomes->get('Reserva de emergência'))->value),
+            optional($incomes->get('Reserva de emergência'))->value,
             optional($incomes->get('Reserva de emergência'))->data_info,
 
             // Investimento Personalizado 1 ano
-            $this->formatNumber(optional($incomes->get('Investimento Personalizado 1 ano'))->value),
+            optional($incomes->get('Investimento Personalizado 1 ano'))->value,
             optional($incomes->get('Investimento Personalizado 1 ano'))->data_info,
         ];
     }
-    private function formatNumber($value): ?string
+    public function columnFormats(): array
     {
-        if ($value === null) {
-            return null;
-        }
-
-        return number_format((float) $value, 2, ',', '.');
+        return [
+            'C' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Dólar
+            'D' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Disponível para investir
+            'E' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Patrimônio investido
+            'F' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Investimentos
+            'G' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Carteira
+            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Investimento Personalizado
+            'J' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Expansão Patrimonial
+            'L' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Reserva de emergência
+            'N' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Investimento Personalizado 1 ano
+        ];
     }
     /**
     * @return \Illuminate\Support\Collection
