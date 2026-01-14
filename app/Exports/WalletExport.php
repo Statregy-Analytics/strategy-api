@@ -60,7 +60,7 @@ class WalletExport implements FromCollection, WithHeadings, WithMapping
             $currentLoan, // Dólar
             $currentBalance, // disponível para investir
             // aqui vai repetir total de investimento certo seria $currentInvestment
-            $currentInvestment, // patrimônio investido (mesma origem do front)
+            $totalInvestido, // patrimônio investido (mesma origem do front)
             $totalInvestido, // investimentos (total aplicado em contratos)
             $carteira, // carteira (investido + disponível)
 
