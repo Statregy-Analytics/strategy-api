@@ -57,29 +57,37 @@ class WalletExport implements FromCollection, WithHeadings, WithMapping
         return [
             $account->user->name ?? null,
             $account->person,
-            $currentLoan, // Dólar
-            $currentBalance, // disponível para investir
+            $this->formatNumber($currentLoan), // Dólar
+            $this->formatNumber($currentBalance), // disponível para investir
             // aqui vai repetir total de investimento certo seria $currentInvestment
-            $totalInvestido, // patrimônio investido (mesma origem do front)
-            $totalInvestido, // investimentos (total aplicado em contratos)
-            $carteira, // carteira (investido + disponível)
+            $this->formatNumber($totalInvestido), // patrimônio investido (mesma origem do front)
+            $this->formatNumber($totalInvestido), // investimentos (total aplicado em contratos)
+            $this->formatNumber($carteira), // carteira (investido + disponível)
 
             // Investimento Personalizado
-            optional($incomes->get('Investimento Personalizado'))->value,
+            $this->formatNumber(optional($incomes->get('Investimento Personalizado'))->value),
             optional($incomes->get('Investimento Personalizado'))->data_info,
 
             // Expansão Patrimonial
-            optional($incomes->get('Expansão Patrimonial'))->value,
+            $this->formatNumber(optional($incomes->get('Expansão Patrimonial'))->value),
             optional($incomes->get('Expansão Patrimonial'))->data_info,
 
             // Reserva de emergência
-            optional($incomes->get('Reserva de emergência'))->value,
+            $this->formatNumber(optional($incomes->get('Reserva de emergência'))->value),
             optional($incomes->get('Reserva de emergência'))->data_info,
 
             // Investimento Personalizado 1 ano
-            optional($incomes->get('Investimento Personalizado 1 ano'))->value,
+            $this->formatNumber(optional($incomes->get('Investimento Personalizado 1 ano'))->value),
             optional($incomes->get('Investimento Personalizado 1 ano'))->data_info,
         ];
+    }
+    private function formatNumber($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return number_format((float) $value, 2, ',', '.');
     }
     /**
     * @return \Illuminate\Support\Collection
