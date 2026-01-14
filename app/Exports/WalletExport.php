@@ -37,17 +37,31 @@ class WalletExport implements FromCollection, WithHeadings, WithMapping
     }
     public function map($account): array
     {
-        $wallet = $account->userWallet;
+        // Garante que estamos pegando a carteira mais recente do usuário
+        $wallet = $account->userWallet()->latest('id')->first();
         $incomes = $account->userIncomes->keyBy('origin_name');
+
+        // Valores principais da carteira seguindo a mesma lógica do front (Vuex getters)
+        $currentInvestment = optional($wallet)->current_investment ?? 0; // Patrimônio investido
+        $currentBalance = optional($wallet)->current_balance ?? 0; // Disponível para investir
+        $currentLoan = optional($wallet)->current_loan ?? 0; // Cotação / dólar
+
+        // Soma disponível para investir com o investido (saldo da carteira)
+        $carteira = $currentInvestment + $currentBalance;
+
+        // Total investido a partir dos contratos (mantido para a coluna "Investimentos")
+        $totalInvestido = $account->userIncomes->sum(function ($income) {
+            return $income->value ?? 0;
+        });
 
         return [
             $account->user->name ?? null,
             $account->person,
-            $wallet->current_loan ?? null,
-            null, // disponível para investir (se não existir no banco)
-            null, // patrimônio investido
-            null, // investimentos
-            $wallet->current_investment ?? null,
+            $currentLoan, // Dólar
+            $currentBalance, // disponível para investir
+            $currentInvestment, // patrimônio investido (mesma origem do front)
+            $totalInvestido, // investimentos (total aplicado em contratos)
+            $carteira, // carteira (investido + disponível)
 
             // Investimento Personalizado
             optional($incomes->get('Investimento Personalizado'))->value,

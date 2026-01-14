@@ -63,6 +63,7 @@ class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReadi
                 $account = Account::where('person', $row['conta'])->first();
                 Log::info('Account found: ' . $account);
                 $account->userWallet()->update([
+                    'current_balance' => $row['disponivel_para_investir'] ?? $account->userWallet->current_balance,
                     'current_investment' => $row['carteira'],
                     'updated_at' => now(),
                     'current_loan' => $row['dolar']
