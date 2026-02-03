@@ -78,6 +78,15 @@ class ClientController extends Controller
         }
         return $response;
     }
+    public function deleteInvestment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|integer|exists:users,id',
+        ]);
+        $validator->validate();
+
+        return $this->clientServices->deleteInvestimentUser($request->user_id);
+    }
     /**
      * @param InviteClientRequest $request
      * @return JsonResponse

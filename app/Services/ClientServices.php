@@ -3,13 +3,16 @@
 namespace App\Services;
 
 use App\Enum\RoleEnum;
+use App\Enum\FinancialLogOperationEnum;
 use App\Models\Investment;
+use App\Models\FinancialLog;
 use App\Models\User;
 use App\Models\UserInvestment;
 use App\Models\UserWallet;
 use Exception;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -95,6 +98,59 @@ class ClientServices
             DB::rollBack();
             return response()->json([
                 'message' => 'Erro na atualização!',
+                'exception' => $e,
+                'status'=> 500
+            ], 500);
+        }
+    }
+
+    public function deleteInvestimentUser(int $user)
+    {
+        try{
+            DB::beginTransaction();
+
+            $userInvestment = UserInvestment::where('user_id', $user)->first();
+            if (! $userInvestment) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Nenhum investimento encontrado para este usuário.',
+                    'status' => 404,
+                ], 404);
+            }
+
+            $investmentId = $userInvestment->investment_id;
+            $userInvestment->delete();
+
+            $wallet = UserWallet::where('user_id', $user)->first();
+
+            if ($wallet) {
+                FinancialLog::create([
+                    'user_wallet_id' => $wallet->id,
+                    'user_id' => $user,
+                    'operation' => FinancialLogOperationEnum::CLIENT_INVESTMENT_DELETE->value,
+                    'amount' => null,
+                    'balance_before' => $wallet->current_balance,
+                    'balance_after' => $wallet->current_balance,
+                    'meta' => [
+                        'investment_id' => $investmentId,
+                        'current_investment' => $wallet->current_investment,
+                        'actor_id' => Auth::id(),
+                        'performed_at' => now()->toISOString(),
+                    ],
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message'=> 'Investimento do usuário removido com sucesso.',
+                'status'=> 200
+            ], 200);
+        }catch( Exception $e){
+            Log::error('exception ->'.$e);
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Erro ao remover investimento do usuário!',
                 'exception' => $e,
                 'status'=> 500
             ], 500);
