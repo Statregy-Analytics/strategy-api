@@ -5,7 +5,7 @@ namespace App\Enum;
 enum FinancialLogOperationEnum: string
 {
     case WALLET_UPDATE = 'wallet_update';
-    case CLIENT_INVESTMENT_DELETE = 'client_investment_delete';
+    case CLIENT_INCOME_DELETE = 'client_income_delete';
 
     public static function forSelect(): array
     {

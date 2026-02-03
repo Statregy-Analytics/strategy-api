@@ -78,14 +78,15 @@ class ClientController extends Controller
         }
         return $response;
     }
-    public function deleteInvestment(Request $request)
+    public function deleteIncome(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|integer|exists:users,id',
+            'income_id' => 'required|integer|exists:user_incomes,id'
         ]);
         $validator->validate();
 
-        return $this->clientServices->deleteInvestimentUser($request->user_id);
+        return $this->clientServices->deleteIncomeUser($request->user_id, $request->income_id);
     }
     /**
      * @param InviteClientRequest $request

@@ -66,7 +66,7 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::post('/', 'invitation')->name('invitation');
         Route::get('/{id}', 'index')->name('index');
         Route::put('/investment', 'addInvestment')->name('addInvestment');
-        Route::delete('/investment', 'deleteInvestment')->name('deleteInvestment');
+        Route::delete('/income', 'deleteIncome')->name('deleteIncome');
     });
 
     Route::controller(UserExtractController::class)->prefix('/extract')->as('extract.')->group(function () {

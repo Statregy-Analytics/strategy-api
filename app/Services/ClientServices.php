@@ -7,6 +7,7 @@ use App\Enum\FinancialLogOperationEnum;
 use App\Models\Investment;
 use App\Models\FinancialLog;
 use App\Models\User;
+use App\Models\UserIncome;
 use App\Models\UserInvestment;
 use App\Models\UserWallet;
 use Exception;
@@ -104,46 +105,59 @@ class ClientServices
         }
     }
 
-    public function deleteInvestimentUser(int $user)
+    public function deleteIncomeUser(int $user, int $incomeId)
     {
         try{
             DB::beginTransaction();
 
-            $userInvestment = UserInvestment::where('user_id', $user)->first();
-            if (! $userInvestment) {
+            $income = UserIncome::where('id', $incomeId)
+                ->where('user_id', $user)
+                ->first();
+            if (! $income) {
                 DB::rollBack();
                 return response()->json([
-                    'message' => 'Nenhum investimento encontrado para este usuário.',
+                    'message' => 'Nenhum rendimento encontrado para este usuário.',
                     'status' => 404,
                 ], 404);
             }
 
-            $investmentId = $userInvestment->investment_id;
-            $userInvestment->delete();
+            $incomeValue = (float) $income->value;
 
             $wallet = UserWallet::where('user_id', $user)->first();
 
             if ($wallet) {
+                $investmentBefore = (float) $wallet->current_investment;
+                $investmentAfter = max(0, $investmentBefore - $incomeValue);
+
+                $wallet->current_investment = $investmentAfter;
+                $wallet->updateOrFail();
+
                 FinancialLog::create([
                     'user_wallet_id' => $wallet->id,
                     'user_id' => $user,
-                    'operation' => FinancialLogOperationEnum::CLIENT_INVESTMENT_DELETE->value,
-                    'amount' => null,
+                    'operation' => FinancialLogOperationEnum::CLIENT_INCOME_DELETE->value,
+                    'amount' => $incomeValue,
                     'balance_before' => $wallet->current_balance,
                     'balance_after' => $wallet->current_balance,
                     'meta' => [
-                        'investment_id' => $investmentId,
-                        'current_investment' => $wallet->current_investment,
+                        'income_id' => $income->id,
+                        'income_origin_name' => $income->origin_name,
+                        'income_date_at' => $income->date_at,
+                        'income_value' => $incomeValue,
+                        'current_investment_before' => $investmentBefore,
+                        'current_investment_after' => $investmentAfter,
                         'actor_id' => Auth::id(),
                         'performed_at' => now()->toISOString(),
                     ],
                 ]);
             }
 
+            $income->delete();
+
             DB::commit();
 
             return response()->json([
-                'message'=> 'Investimento do usuário removido com sucesso.',
+                'message'=> 'Rendimento do usuário removido com sucesso.',
                 'status'=> 200
             ], 200);
         }catch( Exception $e){
@@ -155,5 +169,9 @@ class ClientServices
                 'status'=> 500
             ], 500);
         }
+    }
+    public function deleteIncomes(int $user, $income)
+    {
+
     }
 }
