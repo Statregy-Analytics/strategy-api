@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\UserIncome;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -14,7 +15,7 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 
-class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReading, WithValidation, SkipsEmptyRows
+class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReading, WithValidation, SkipsEmptyRows, WithCalculatedFormulas
 {
     use SkipsFailures;
 
@@ -62,15 +63,23 @@ class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReadi
             if(Account::where('person', $row['conta'])->exists()){
                 $account = Account::where('person', $row['conta'])->first();
                 Log::info('Account found: ' . $account);
+
+                $currentBalance = $this->toDecimal($row['disponivel_para_investir'] ?? null);
+                $currentInvestment = $this->toDecimal($row['carteira'] ?? null);
+                $currentLoan = $this->toDecimal($row['dolar'] ?? null);
+
                 $account->userWallet()->update([
-                    'current_balance' => $row['disponivel_para_investir'] ?? $account->userWallet->current_balance,
-                    'current_investment' => $row['carteira'],
+                    'current_balance' => $currentBalance ?? $account->userWallet->current_balance,
+                    'current_investment' => $currentInvestment ?? $account->userWallet->current_investment,
                     'updated_at' => now(),
-                    'current_loan' => $row['dolar']
+                    'current_loan' => $currentLoan ?? $account->userWallet->current_loan,
                 ]);
 
                 foreach($this->investments as $investment) {
-                    if($row[$investment['value']]){
+                    $value = $this->toDecimal($row[$investment['value']] ?? null);
+                    $dataInfo = $this->toDecimal($row[$investment['data_info']] ?? null);
+
+                    if($value !== null){
                         Log::info('row: ' . $row);
                         if($account->userIncomes()->where('origin_name', $investment['name'])->exists()){
                             UserIncome::updateOrCreate(
@@ -79,8 +88,8 @@ class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReadi
                                     'origin_name' => $investment['name'],
                                 ],
                                 [
-                                    'value' => $row[$investment['value']],
-                                    'data_info' => $row[$investment['data_info']],
+                                    'value' => $value,
+                                    'data_info' => $dataInfo,
                                     'updated_at' => now(),
                                 ]
                             );
@@ -90,8 +99,8 @@ class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReadi
                             UserIncome::create([
                                 'user_id' => $account->user_id,
                                 'origin_name' => $investment['name'],
-                                'value' => $row[$investment['value']],
-                                'data_info' => $row[$investment['data_info']],
+                                'value' => $value,
+                                'data_info' => $dataInfo,
                                 'created_at' => now(),
                                 'date_at' => now(),
                                 'updated_at' => now(),
@@ -102,5 +111,50 @@ class WalletUpdateImport implements ToCollection, WithHeadingRow, WithChunkReadi
                 }
             }
         }
+    }
+
+    private function toDecimal(mixed $value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+        if ($value === '' || str_starts_with($value, '=')) {
+            return null;
+        }
+
+        $normalized = preg_replace('/[^\d,.\-]/', '', $value);
+        if ($normalized === null || $normalized === '') {
+            return null;
+        }
+
+        $commaPos = strrpos($normalized, ',');
+        $dotPos = strrpos($normalized, '.');
+
+        if ($commaPos !== false && $dotPos !== false) {
+            if ($commaPos > $dotPos) {
+                $normalized = str_replace('.', '', $normalized);
+                $normalized = str_replace(',', '.', $normalized);
+            } else {
+                $normalized = str_replace(',', '', $normalized);
+            }
+        } elseif ($commaPos !== false) {
+            $normalized = str_replace(',', '.', $normalized);
+        }
+
+        return is_numeric($normalized) ? (float) $normalized : null;
     }
 }
